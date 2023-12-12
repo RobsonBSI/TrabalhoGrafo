@@ -10,11 +10,13 @@ public class Grafo {
                 {4, 8, 7, 0}
         };
         VizinhoMaisProximo vizinho= new VizinhoMaisProximo();
+        String[] nomesCidades = {"A", "B", "C", "D"};
+        String cidadeInicial = "A";
         int pontoInicial = 0;
-        ResultadoVizinhoMaisProximo resultado = vizinho.vizinhoMaisProximo(grafo, pontoInicial);
+        ResultadoVizinhoMaisProximo resultado = vizinho.vizinhoMaisProximo(grafo, nomesCidades, cidadeInicial);
 
         System.out.println("Caminho encontrado: " + resultado.caminho);
         System.out.println("Distância total: " + resultado.distanciaTotal);
+
     }
 }
-

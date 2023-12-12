@@ -4,47 +4,59 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class VizinhoMaisProximo {
-    public static ResultadoVizinhoMaisProximo vizinhoMaisProximo(int[][] grafo, int pontoInicial) {
-        int numPontos = grafo.length;
-        boolean[] visitados = new boolean[numPontos];
-        List<Integer> caminho = new ArrayList<>();
+    public static ResultadoVizinhoMaisProximo vizinhoMaisProximo(int[][] grafo, String[] nomesCidades, String cidadeInicial) {
+        int numCidades = grafo.length;
+        boolean[] visitados = new boolean[numCidades];
+        List<String> caminho = new ArrayList<>();
         int distanciaTotal = 0;
 
-        // Inicializa o caminho com o ponto inicial
-        caminho.add(pontoInicial);
-        visitados[pontoInicial] = true;
+        // Encontra o índice correspondente à cidade inicial
+        int indiceCidadeInicial = encontrarIndiceCidade(cidadeInicial, nomesCidades);
 
-        // Enquanto houver pontos não visitados
-        while (caminho.size() < numPontos) {
-            int pontoAtual = caminho.get(caminho.size() - 1);
-            VizinhoMaisProximoResult resultado = encontrarVizinhoMaisProximo(grafo, pontoAtual, visitados);
+        // Inicializa o caminho com a cidade inicial
+        caminho.add(cidadeInicial);
+        visitados[indiceCidadeInicial] = true;
 
-            int proximoVizinho = resultado.proximoVizinho;
+        // Enquanto houver cidades não visitadas
+        while (caminho.size() < numCidades) {
+            String cidadeAtual = caminho.get(caminho.size() - 1);
+            VizinhoMaisProximoResult resultado = encontrarVizinhoMaisProximo(grafo, encontrarIndiceCidade(cidadeAtual, nomesCidades), visitados);
+
+            String proximoVizinho = nomesCidades[resultado.proximoVizinho];
             distanciaTotal += resultado.distancia;
 
-            // Adiciona o ponto mais próximo ao caminho
+            // Adiciona a cidade mais próxima ao caminho
             caminho.add(proximoVizinho);
-            visitados[proximoVizinho] = true;
+            visitados[resultado.proximoVizinho] = true;
         }
 
-        // Completa o ciclo, voltando ao ponto inicial
-        caminho.add(pontoInicial);
-        distanciaTotal += grafo[caminho.get(caminho.size() - 2)][pontoInicial];
+        // Completa o ciclo, voltando à cidade inicial
+        caminho.add(cidadeInicial);
+        distanciaTotal += grafo[encontrarIndiceCidade(caminho.get(caminho.size() - 2), nomesCidades)][indiceCidadeInicial];
 
         return new ResultadoVizinhoMaisProximo(caminho, distanciaTotal);
     }
 
-    private static VizinhoMaisProximoResult encontrarVizinhoMaisProximo(int[][] grafo, int pontoAtual, boolean[] visitados) {
+    private static VizinhoMaisProximoResult encontrarVizinhoMaisProximo(int[][] grafo, int indiceCidadeAtual, boolean[] visitados) {
         int proximoVizinho = -1;
         int menorDistancia = Integer.MAX_VALUE;
 
         for (int i = 0; i < grafo.length; i++) {
-            if (!visitados[i] && grafo[pontoAtual][i] < menorDistancia) {
+            if (!visitados[i] && grafo[indiceCidadeAtual][i] < menorDistancia) {
                 proximoVizinho = i;
-                menorDistancia = grafo[pontoAtual][i];
+                menorDistancia = grafo[indiceCidadeAtual][i];
             }
         }
 
         return new VizinhoMaisProximoResult(proximoVizinho, menorDistancia);
+    }
+
+    private static int encontrarIndiceCidade(String cidade, String[] nomesCidades) {
+        for (int i = 0; i < nomesCidades.length; i++) {
+            if (nomesCidades[i].equals(cidade)) {
+                return i;
+            }
+        }
+        return -1; // Retorna -1 se não encontrar
     }
 }
