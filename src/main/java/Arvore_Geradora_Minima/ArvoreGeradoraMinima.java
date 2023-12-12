@@ -1,63 +1,160 @@
 package Arvore_Geradora_Minima;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 public class ArvoreGeradoraMinima {
 
-    static class Edge {
-        int from, to, weight;
+    public static ResultadoCaixeiroViajanteAGM caixeiroViajanteAGM(int[][] grafo) {
+        int numPontos = grafo.length;
+        List<Aresta> arestas = gerarListaArestas(grafo);
+        Collections.sort(arestas); // Ordena as arestas pelo peso
 
-        public Edge(int from, int to, int weight) {
-            this.from = from;
-            this.to = to;
-            this.weight = weight;
+        UnionFind unionFind = new UnionFind(numPontos);
+        List<Aresta> mstArestas = new ArrayList<>();
+
+        for (Aresta aresta : arestas) {
+            if (unionFind.union(aresta.origem, aresta.destino)) {
+                mstArestas.add(aresta);
+            }
         }
+
+        List<Integer> caminho = percorrerAGM(mstArestas);
+        int distanciaTotal = calcularDistanciaTotal(caminho, grafo);
+
+        return new ResultadoCaixeiroViajanteAGM(caminho, distanciaTotal);
     }
 
-    public static List<String> transformarEmCircuitoEuleriano(List<Edge> agm, String[] cidades) {
-        List<String> circuitoEuleriano = new ArrayList<>();
-        Map<Integer, String> indiceParaCidade = new HashMap<>();
+    private static List<Aresta> gerarListaArestas(int[][] grafo) {
+        List<Aresta> arestas = new ArrayList<>();
+        int numPontos = grafo.length;
 
-        // Mapeia os índices dos vértices para os nomes das cidades
-        for (int i = 0; i < cidades.length; i++) {
-            indiceParaCidade.put(i, cidades[i]);
+        for (int i = 0; i < numPontos; i++) {
+            for (int j = i + 1; j < numPontos; j++) {
+                arestas.add(new Aresta(i, j, grafo[i][j]));
+            }
         }
 
-        // Inicializa o circuito euleriano a partir do primeiro vértice
-        int startVertex = agm.get(0).from;
-        int currentVertex = startVertex;
+        return arestas;
+    }
 
-        // Itera sobre as arestas da árvore geradora mínima
-        for (Edge edge : agm) {
-            // Adiciona o vértice atual ao circuito
-            circuitoEuleriano.add(indiceParaCidade.get(currentVertex));
+    private static List<Integer> percorrerAGM(List<Aresta> mstArestas) {
+        List<Integer> caminho = new ArrayList<>();
+        boolean[] visitados = new boolean[mstArestas.size() + 1];
 
-            // Move para o próximo vértice na aresta
-            currentVertex = (currentVertex == edge.from) ? edge.to : edge.from;
+        for (Aresta aresta : mstArestas) {
+            if (!visitados[aresta.origem]) {
+                caminho.add(aresta.origem);
+                visitados[aresta.origem] = true;
+            }
+            if (!visitados[aresta.destino]) {
+                caminho.add(aresta.destino);
+                visitados[aresta.destino] = true;
+            }
         }
 
-        // Adiciona o vértice de início para formar um ciclo euleriano
-        circuitoEuleriano.add(indiceParaCidade.get(startVertex));
+        // Adiciona a última cidade para fechar o ciclo
+        caminho.add(mstArestas.get(0).origem);
 
-        return circuitoEuleriano;
+        return caminho;
+    }
+
+    private static int calcularDistanciaTotal(List<Integer> caminho, int[][] grafo) {
+        int distanciaTotal = 0;
+
+        for (int i = 0; i < caminho.size() - 1; i++) {
+            int pontoAtual = caminho.get(i);
+            int proximoPonto = caminho.get(i + 1);
+            distanciaTotal += grafo[pontoAtual][proximoPonto];
+        }
+
+        // Adiciona a última aresta para fechar o ciclo
+        distanciaTotal += grafo[caminho.get(caminho.size() - 1)][caminho.get(0)];
+
+        return distanciaTotal;
     }
 
     public static void main(String[] args) {
-        String[] cidades = {"A", "B", "C", "D", "E"};
-        List<Edge> agm = new ArrayList<>();
-        agm.add(new Edge(0, 1, 10));
-        agm.add(new Edge(1, 2, 12));
-        agm.add(new Edge(2, 3, 6));
-        agm.add(new Edge(3, 4, 8));
+        int[][] grafo = {
+                {0, 2, 9, 10},
+                {2, 0, 6, 4},
+                {9, 6, 0, 7},
+                {10, 4, 7, 0}
+        };
 
-        List<String> circuitoEuleriano = transformarEmCircuitoEuleriano(agm, cidades);
+        ResultadoCaixeiroViajanteAGM resultado = caixeiroViajanteAGM(grafo);
 
-        System.out.println("Circuito Euleriano:");
-        for (String cidade : circuitoEuleriano) {
-            System.out.print(cidade + " ");
+        System.out.println("Caminho encontrado: " + resultado.caminho);
+        System.out.println("Distância total: " + resultado.distanciaTotal);
+    }
+}
+
+class Aresta implements Comparable<Aresta> {
+    int origem;
+    int destino;
+    int peso;
+
+    public Aresta(int origem, int destino, int peso) {
+        this.origem = origem;
+        this.destino = destino;
+        this.peso = peso;
+    }
+
+    @Override
+    public int compareTo(Aresta outraAresta) {
+        return Integer.compare(this.peso, outraAresta.peso);
+    }
+}
+
+class UnionFind {
+    private int[] parent;
+    private int[] rank;
+
+    public UnionFind(int size) {
+        parent = new int[size];
+        rank = new int[size];
+
+        for (int i = 0; i < size; i++) {
+            parent[i] = i;
+            rank[i] = 0;
         }
+    }
+
+    public int find(int x) {
+        if (parent[x] != x) {
+            parent[x] = find(parent[x]);
+        }
+        return parent[x];
+    }
+
+    public boolean union(int x, int y) {
+        int rootX = find(x);
+        int rootY = find(y);
+
+        if (rootX == rootY) {
+            return false;
+        }
+
+        if (rank[rootX] < rank[rootY]) {
+            parent[rootX] = rootY;
+        } else if (rank[rootX] > rank[rootY]) {
+            parent[rootY] = rootX;
+        } else {
+            parent[rootX] = rootY;
+            rank[rootY]++;
+        }
+
+        return true;
+    }
+}
+
+class ResultadoCaixeiroViajanteAGM {
+    List<Integer> caminho;
+    int distanciaTotal;
+
+    public ResultadoCaixeiroViajanteAGM(List<Integer> caminho, int distanciaTotal) {
+        this.caminho = caminho;
+        this.distanciaTotal = distanciaTotal;
     }
 }
